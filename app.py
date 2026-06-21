@@ -4,7 +4,7 @@ import ac_engine
 # 1. Page Configuration
 st.set_page_config(page_title="Industrial Climate Simulator", layout="wide")
 st.image("logo.jpg", width=250)
-st.title("ERS AC Simulator")
+st.title("Air Conditioner Simulator")
 st.subheader("Created by Brian Towne")
 
 # 2. Layout Structure: Inputs (Left) and Outputs (Right)
