@@ -47,7 +47,7 @@ with col2:
             
             # First Row: Temperatures and Relative Humidity
             m1, m2, m3 = st.columns(3)
-            m1.metric(label="Dry Bulb", value=f"{results['Dry_Bulb']:.2f} °F")
+            m1.metric(label="Dry Bulb", value=f"{results['Tout']:.2f} °F")
             m2.metric(label="Dew Point", value=f"{results['Dew_Point']:.2f} °F")
             m3.metric(label="Relative Humidity", value=f"{results['Relative_Humidity']:.1f} %")
             
