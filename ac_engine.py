@@ -44,7 +44,7 @@ def simulate_smart_family_ac(unit_selection, Tin, RHin_pct, Toutdoor, CFM=None):
     Cp = 0.240     
     hfg = 1061.0   
 
-    # UPGRADED: True Entering Psychrometrics via Tetens
+    # Entering Psychrometrics
     P_sat_in = get_p_sat(Tin)
     P_vapor_in = RHin * P_sat_in
     W_in = 0.62194 * P_vapor_in / (Patm - P_vapor_in)
@@ -54,11 +54,14 @@ def simulate_smart_family_ac(unit_selection, Tin, RHin_pct, Toutdoor, CFM=None):
     v_in = 0.3704 * (Tin + 459.67) * (1.0 + 1.6078 * W_in) / Patm
     m_da = (CFM * 60.0) / v_in
 
-    # Universal Field Capacity Profile
-    if Toutdoor >= 95.0:
-        Q_total = Q_nominal * 0.55  
+    # Fleet Capacity Derate (20-Ton modeled strictly off submittal limits)
+    if unit_selection == "20-Ton Unit (SACP20A-HS)":
+        Q_total = Q_nominal * 0.85
     else:
-        Q_total = Q_nominal * 0.65
+        if Toutdoor >= 95.0:
+            Q_total = Q_nominal * 0.55  
+        else:
+            Q_total = Q_nominal * 0.65
 
     # Universal Field-Tuned Sensible Heat Ratio (SHR) Curve
     if DP_in <= T_coil:
@@ -70,7 +73,7 @@ def simulate_smart_family_ac(unit_selection, Tin, RHin_pct, Toutdoor, CFM=None):
     Q_sensible = Q_total * SHR
     Q_latent = Q_total * (1.0 - SHR)
 
-    # ENTHALPY GOVERNOR & ENERGY BALANCES
+    # Enthalpy Governor & Energy Balances
     h_in = Cp * Tin + W_in * (hfg + 0.444 * Tin)
     h_out_target = h_in - (Q_total / m_da)
 
@@ -99,24 +102,38 @@ def simulate_smart_family_ac(unit_selection, Tin, RHin_pct, Toutdoor, CFM=None):
         Tout = Tout_theoretical
         W_out = W_out_theoretical
 
-    GrainsOut = W_out * 7000.0
+    # =========================================================
+    # FINAL OUTLET PSYCHROMETRICS RESOLUTION (5 Target Variables)
+    # =========================================================
+    
+    # 1. Specific Humidity
+    GrainsOut = W_out * 7000.0            
+    Specific_Humidity = W_out             
 
-    # UPGRADED: True Outlet Psychrometrics via Tetens
+    # 2. Dry Bulb Temperature
+    Dry_Bulb = Tout                       
+
+    # 3. Relative Humidity
     P_vapor_out = (W_out * Patm) / (0.62194 + W_out)
     P_sat_out = get_p_sat(Tout)
-    
     if P_sat_out > 0:
-        RHout = max(0.0, min(1.0, P_vapor_out / P_sat_out))
+        Relative_Humidity = max(0.0, min(1.0, P_vapor_out / P_sat_out)) * 100.0
     else:
-        RHout = 0.0
+        Relative_Humidity = 0.0
 
-    DPout = get_dew_point(P_vapor_out)
+    # 4. Dew Point Temperature
+    Dew_Point = get_dew_point(P_vapor_out)
+
+    # 5. Specific Enthalpy (BTU/lb)
+    Specific_Enthalpy = Cp * Tout + W_out * (hfg + 0.444 * Tout)
 
     return {
         "Unit": unit_selection,
         "Airflow": CFM,
-        "Tout": Tout,
-        "RHout": RHout * 100.0,
-        "DPout": DPout,
-        "GrainsOut": GrainsOut
+        "Dry_Bulb": Dry_Bulb,
+        "Relative_Humidity": Relative_Humidity,
+        "Dew_Point": Dew_Point,
+        "Specific_Humidity_lb": Specific_Humidity,
+        "Specific_Humidity_Grains": GrainsOut,
+        "Specific_Enthalpy": Specific_Enthalpy
     }

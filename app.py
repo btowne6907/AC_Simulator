@@ -40,25 +40,28 @@ with col2:
     st.header("Discharge Psychrometrics")
     
     if run_sim:
-        # Pass the UI inputs into the universal math engine
         results = ac_engine.simulate_smart_family_ac(selected_unit, tin, rhin, toutdoor, custom_cfm)
         
         if results:
-            # Display results in clean dashboard metric cards
             st.markdown(f"**Operating Airflow:** {results['Airflow']:,} CFM")
             
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric(label="Leaving Temp", value=f"{results['Tout']:.2f} °F")
-            m2.metric(label="Leaving RH", value=f"{results['RHout']:.1f} %")
-            m3.metric(label="Leaving Dew Point", value=f"{results['DPout']:.2f} °F")
-            m4.metric(label="Moisture Load", value=f"{results['GrainsOut']:.1f} gr/lb")
+            # First Row: Temperatures and Relative Humidity
+            m1, m2, m3 = st.columns(3)
+            m1.metric(label="Dry Bulb", value=f"{results['Dry_Bulb']:.2f} °F")
+            m2.metric(label="Dew Point", value=f"{results['Dew_Point']:.2f} °F")
+            m3.metric(label="Relative Humidity", value=f"{results['Relative_Humidity']:.1f} %")
+            
+            # Second Row: Moisture and Energy
+            m4, m5 = st.columns(2)
+            m4.metric(label="Specific Humidity", value=f"{results['Specific_Humidity_Grains']:.1f} gr/lb")
+            m5.metric(label="Specific Enthalpy", value=f"{results['Specific_Enthalpy']:.2f} BTU/lb")
             
             st.divider()
             
             # General Operational Feedback
-            temperature_drop = tin - results['Tout']
+            temperature_drop = tin - results['Dry_Bulb']
             
-            if results['RHout'] >= 90.0:
+            if results['Relative_Humidity'] >= 90.0:
                 st.info("💧 **Latent-Heavy Operation:** The unit is operating near full saturation. A significant portion of the machine's capacity is dedicated to dehumidification.")
             elif temperature_drop > 25.0:
                 st.success("❄️ **Sensible-Heavy Operation:** The unit is driving a massive temperature drop. Ideal for strict space cooling or high sensible heat loads.")
